@@ -92,6 +92,29 @@ When Timestamp (TS) variants are used:
 - Encoded length is typically 6 characters
 - Timestamp always appears at the beginning of the ID
 
+## Collision Probability
+
+All formats use Base62 (62 possible characters per position).
+
+| Format | Keyspace | Safe up to (1% risk) | 50% collision at |
+|--------|----------|----------------------|------------------|
+| CLID-1/2 | ~10^43 | ~4.6 × 10^20 IDs | ~2.7 × 10^21 IDs |
+| CLID-3 | ~10^37 | ~9.3 × 10^17 IDs | ~1.7 × 10^18 IDs |
+| CLID-4 | ~10^35 | ~3.7 × 10^17 IDs | ~7.0 × 10^17 IDs |
+| CLID-5 | ~10^28 | ~3.1 × 10^13 IDs | ~5.8 × 10^14 IDs |
+| CLID-1-TS/2-TS | ~10^35 (random part) | ~3.7 × 10^17 per second | ~7.0 × 10^17/s |
+| CLID-3-TS | ~10^26 (random part) | ~2.9 × 10^13 per second | ~5.5 × 10^13/s |
+| CLID-4-TS | ~10^25 (random part) | ~1.6 × 10^12 per second | ~2.9 × 10^12/s |
+| CLID-5-TS | ~10^17 (random part) | ~4.1 × 10^7 per second | ~7.6 × 10^8/s |
+
+Collision probability is calculated using the birthday paradox approximation:
+P ≈ n² / 2N, where n = IDs generated and N = total keyspace.
+
+> **Note on TS variants:** The timestamp prefix is shared by all IDs generated within the same second,
+> so collision resistance depends only on the random suffix. CLID-5-TS in particular is limited to
+> ~41 million safe IDs per second — fine for most use cases, but worth knowing at high throughput.
+
+
 ## Usage Notes
 
 - All formats are case sensitive
