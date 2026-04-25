@@ -13,7 +13,7 @@ A collection of clean, human-readable identifier formats without unnecessary com
 - Example: AbC1-dEfG-89Hi-JkL0-mNoP-QrS2
 
 ### CLID-1-TS
-<timestamp>-<4 char>-<4 char>-<4 char>-<4 char>-<4 char>
+\<timestamp\>-<4 char>-<4 char>-<4 char>-<4 char>-<4 char>
 
 - Timestamp (Base62 encoded) + 20 random characters
 - Total length: timestamp length varies + 20 chars (excluding hyphens)
@@ -27,7 +27,7 @@ A collection of clean, human-readable identifier formats without unnecessary com
 - Example: AbC1dEfG89HiJkL0mNoPQrS2
 
 ### CLID-2-TS
-<timestamp><4 char><4 char><4 char><4 char><4 char>
+\<timestamp\><4 char><4 char><4 char><4 char><4 char>
 
 - Timestamp (Base62 encoded) + 20 random characters
 - Total length: timestamp length varies + 20 chars (no separators)
@@ -39,7 +39,7 @@ A collection of clean, human-readable identifier formats without unnecessary com
 - Example: aB3xY7kLmNpQ9RsTuVwX0
 
 ### CLID-3-TS
-<timestamp> + 15 random characters (Base62)
+\<timestamp\> + 15 random characters (Base62)
 
 - Total length: timestamp length varies + 15 chars
 - Example: xY9kLmNpQ9RsTuVwX0
@@ -50,7 +50,7 @@ A collection of clean, human-readable identifier formats without unnecessary com
 - Example: aB3xY7kLmNpQ9RsTuVw
 
 ### CLID-4-TS
-<timestamp> + 14 random characters (Base62)
+\<timestamp\> + 14 random characters (Base62)
 
 - Total length: timestamp length varies + 14 chars
 - Example: xY9kLmNpQ9RsTuVw
@@ -61,7 +61,7 @@ A collection of clean, human-readable identifier formats without unnecessary com
 - Example: aB3xY7kLmNpQ9RsT
 
 ### CLID-5-TS
-<timestamp> + 10 random characters (Base62)
+\<timestamp\> + 10 random characters (Base62)
 
 - Total length: timestamp length varies + 10 chars
 - Example: xY9kLmNpQ9R
