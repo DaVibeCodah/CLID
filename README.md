@@ -11,6 +11,7 @@ A collection of clean, human-readable identifier formats without unnecessary com
 - Hyphens included for readability
 - Character set: A-Z, a-z, 0-9 (case sensitive)
 - Example: AbC1-dEfG-89Hi-JkL0-mNoP-QrS2
+- 0.0048% collision probability on 31,622,776,601,683,790,000 generated ID's.
 
 ### CLID-1-TS
 \<timestamp\>-<4 char>-<4 char>-<4 char>-<4 char>-<4 char>
@@ -25,6 +26,7 @@ A collection of clean, human-readable identifier formats without unnecessary com
 - Total length: 24 characters (no separators)
 - Character set: A-Z, a-z, 0-9 (case sensitive)
 - Example: AbC1dEfG89HiJkL0mNoPQrS2
+- 0.0048% collision probability on 31,622,776,601,683,790,000 generated ID's.
 
 ### CLID-2-TS
 \<timestamp\><4 char><4 char><4 char><4 char><4 char>
