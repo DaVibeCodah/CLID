@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLID Collision Probability</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#e8e6e1;--bg2:#dedad4;--bg3:#cac6be;--sf:#f0ede8;--bd:rgba(0,0,0,.1);--bd2:rgba(0,0,0,.18);--t:#1a1916;--t2:#5a564f;--t3:#8a857c;--mono:'IBM Plex Mono',monospace;--sans:'DM Sans',sans-serif;--green:#2d6a2d;--gbg:#d4ebd4;--amber:#7a4f0a;--abg:#f5e4c0;--red:#8a2020;--rbg:#f0d0d0;--acc:#2a52a0}
+@media(prefers-color-scheme:dark){:root{--bg:#1a1916;--bg2:#222018;--bg3:#2e2c24;--sf:#111110;--bd:rgba(255,255,255,.08);--bd2:rgba(255,255,255,.15);--t:#eae8e2;--t2:#9a9488;--t3:#5a5650;--green:#7acc7a;--gbg:#1a3a1a;--amber:#e8b84a;--abg:#3a2a08;--red:#e87070;--rbg:#3a1010;--acc:#5a82e0}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--t);font-size:14px;line-height:1.6;min-height:100vh}
+.page{max-width:1120px;margin:0 auto;padding:0 24px 100px}
+
+header{padding:48px 0 36px;border-bottom:1px solid var(--bd);margin-bottom:48px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+header h1{font-size:26px;font-weight:500;letter-spacing:-.02em;font-family:var(--mono);margin-bottom:4px}
+header p{font-size:13px;color:var(--t2);max-width:520px}
+.badge{font-family:var(--mono);font-size:10px;color:var(--t3);border:1px solid var(--bd);padding:4px 10px;border-radius:4px;white-space:nowrap}
+
+.sec{margin-bottom:52px}
+.sec-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--bd)}
+
+.pill{display:inline-block;font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:3px;font-weight:500}
+.p-green{background:var(--gbg);color:var(--green)}
+.p-amber{background:var(--abg);color:var(--amber)}
+.p-red{background:var(--rbg);color:var(--red)}
+
+/* static cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:2px;background:var(--bd);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+.card{background:var(--sf);padding:18px 20px}
+.card-label{font-size:11px;color:var(--t3);margin-bottom:6px;font-family:var(--mono)}
+.card-val{font-size:21px;font-weight:500;font-family:var(--mono);color:var(--t);line-height:1.1;margin-bottom:4px}
+.card-sub{font-size:11px;color:var(--t2)}
+.card-tag{display:inline-block;margin-top:7px;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid var(--bd);color:var(--t3)}
+
+/* explorer grid */
+.explorers{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;background:var(--bd);border:1px solid var(--bd);border-radius:8px;overflow:hidden;margin-bottom:2px}
+@media(max-width:700px){.explorers{grid-template-columns:1fr}}
+.exp{background:var(--sf);padding:20px 22px}
+.exp-title{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:12px}
+.exp-readout{font-family:var(--mono);font-size:28px;font-weight:500;color:var(--t);line-height:1;margin-bottom:3px}
+.exp-sub{font-size:11px;color:var(--t3);margin-bottom:12px}
+
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:3px;background:var(--bg3);border-radius:2px;outline:none;cursor:pointer;display:block}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--t);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--t);cursor:pointer;border:none}
+.ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--t3);padding:0 2px;margin-top:3px}
+
+.custom-row{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.ci{font-family:var(--mono);font-size:12px;background:var(--bg2);border:1px solid var(--bd);border-radius:4px;color:var(--t);padding:5px 9px;flex:1;min-width:80px;outline:none}
+.ci:focus{border-color:var(--acc)}.ci.err{border-color:var(--red)}
+.ca{font-family:var(--mono);font-size:11px;background:var(--t);color:var(--bg);border:none;border-radius:4px;padding:5px 12px;cursor:pointer;white-space:nowrap}
+.ca:hover{opacity:.82}
+.err-msg{font-size:10px;color:var(--red);font-family:var(--mono);margin-top:4px}
+
+.fmt-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.chip{font-family:var(--mono);font-size:10px;padding:4px 9px;border-radius:3px;border:1px solid var(--bd);background:var(--bg2);color:var(--t2);cursor:pointer;transition:all .12s}
+.chip:hover{border-color:var(--bd2);color:var(--t)}
+.chip.active{background:var(--t);color:var(--bg);border-color:var(--t)}
+
+/* reactive panel grid */
+.rxg{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--bd);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+@media(max-width:640px){.rxg{grid-template-columns:1fr}}
+.cp{background:var(--sf);padding:18px 20px 16px}
+.cp.full{grid-column:1/-1}
+.cp-title{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--t3);margin-bottom:12px}
+.live-tag{font-size:9px;font-family:var(--mono);padding:1px 6px;border-radius:2px;border:1px solid var(--bd);color:var(--acc);margin-left:6px;vertical-align:middle}
+.cbox{position:relative}
+
+/* bars */
+.bar-row{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.bar-name{font-family:var(--mono);font-size:10px;color:var(--t2);width:115px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:14px;background:var(--bg2);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .25s cubic-bezier(.4,0,.2,1)}
+.bar-pct{font-family:var(--mono);font-size:10px;width:70px;text-align:right;color:var(--t2);flex-shrink:0}
+.bar-pct.warn{color:var(--amber)}.bar-pct.danger{color:var(--red)}
+
+/* headroom */
+.hd-row{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.hd-name{font-family:var(--mono);font-size:10px;color:var(--t2);width:115px;flex-shrink:0}
+.hd-track{flex:1;height:10px;background:var(--bg2);border-radius:3px;overflow:hidden}
+.hd-fill{height:100%;border-radius:3px;transition:width .25s ease}
+.hd-val{font-family:var(--mono);font-size:10px;width:60px;text-align:right;color:var(--t3);flex-shrink:0}
+
+/* reach */
+.rc-row{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.rc-name{font-family:var(--mono);font-size:10px;color:var(--t2);width:115px;flex-shrink:0}
+.rc-val{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--t);flex:1}
+
+/* spotlight */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.sb{background:var(--bg2);border-radius:4px;padding:10px 12px}
+.sb-label{font-family:var(--mono);font-size:9px;color:var(--t3);margin-bottom:3px}
+.sb-val{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--t)}
+
+/* legend */
+.leg{display:flex;flex-wrap:wrap;gap:5px 14px;margin-top:10px}
+.li{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;color:var(--t2)}
+.ld{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.ldash{width:14px;height:0;flex-shrink:0;border-top:2px dashed}
+
+/* static charts */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--bd);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+@media(max-width:640px){.sg{grid-template-columns:1fr}}
+
+/* heatmap */
+.hm-wrap{overflow-x:auto}
+.hm-table{border-collapse:separate;border-spacing:2px;width:100%;font-family:var(--mono);font-size:10px}
+.hm-table th{font-size:9px;color:var(--t3);font-weight:400;padding:3px 4px;text-align:center;white-space:nowrap}
+.hm-table th.rh{text-align:right;min-width:108px;padding-right:8px}
+.hm-table td{height:26px;border-radius:3px;text-align:center;cursor:default;font-size:9px;transition:filter .12s}
+.hm-table td:hover{filter:brightness(1.18)}
+
+/* table */
+.table-wrap{overflow-x:auto;border:1px solid var(--bd);border-radius:8px}
+table.ref{width:100%;border-collapse:collapse;font-size:12px;min-width:540px}
+table.ref thead{background:var(--bg2)}
+table.ref th{padding:9px 13px;text-align:left;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);font-weight:400;border-bottom:1px solid var(--bd);white-space:nowrap}
+table.ref td{padding:10px 13px;border-bottom:1px solid var(--bd);color:var(--t)}
+table.ref tr:last-child td{border-bottom:none}
+table.ref tbody tr:hover td{background:var(--bg2)}
+td.mono{font-family:var(--mono);font-size:11px}
+td.name{font-family:var(--mono);font-size:11px;font-weight:500}
+.ts-tag{font-size:9px;font-family:var(--mono);color:var(--t3);display:block;margin-top:1px}
+
+#tt{position:fixed;background:var(--t);color:var(--bg);font-family:var(--mono);font-size:11px;padding:5px 9px;border-radius:4px;pointer-events:none;opacity:0;transition:opacity .1s;z-index:9999;white-space:nowrap}
+#tt.show{opacity:1}
+
+footer{border-top:1px solid var(--bd);padding:22px 0;font-family:var(--mono);font-size:10px;color:var(--t3);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+</style>
+</head>
+<body>
+<div id="tt"></div>
+<div class="page">
+
+<header>
+  <div>
+    <h1>CLID collision probability</h1>
+    <p>Birthday-paradox analysis across CLID formats. All three explorers update every chart live — slide, type, or click.</p>
+  </div>
+  <div class="badge">birthday paradox · keyspace analysis</div>
+</header>
+
+<!-- STATIC LIMITS -->
+<div class="sec">
+  <div class="sec-label">Generation limits before 1% collision risk</div>
+  <div class="cards" id="cards"></div>
+</div>
+
+<!-- EXPLORERS + REACTIVE -->
+<div class="sec">
+  <div class="sec-label">Explorers — drag any control, all charts update</div>
+
+  <div class="explorers">
+    <!-- E1: ID count -->
+    <div class="exp">
+      <div class="exp-title">01 · IDs generated</div>
+      <div class="exp-readout" id="e1-ro">10^12.00</div>
+      <div class="exp-sub">log₁₀ scale</div>
+      <input type="range" min="1" max="25" step="0.25" value="12" id="e1-sl">
+      <div class="ticks"><span>10^1</span><span>10^8</span><span>10^15</span><span>10^22</span><span>10^25</span></div>
+      <div class="custom-row">
+        <input type="text" class="ci" id="e1-ci" placeholder="e.g. 1e9">
+        <button class="ca" onclick="applyE1()">apply</button>
+      </div>
+      <div class="err-msg" id="e1-err" style="display:none"></div>
+    </div>
+
+    <!-- E2: target probability -->
+    <div class="exp">
+      <div class="exp-title">02 · target probability</div>
+      <div class="exp-readout" id="e2-ro">1.00%</div>
+      <div class="exp-sub">collision risk threshold</div>
+      <input type="range" min="0.01" max="99.9" step="0.01" value="1" id="e2-sl">
+      <div class="ticks"><span>.01%</span><span>25%</span><span>50%</span><span>75%</span><span>99.9%</span></div>
+      <div class="custom-row">
+        <input type="text" class="ci" id="e2-ci" placeholder="e.g. 0.5">
+        <button class="ca" onclick="applyE2()">apply %</button>
+      </div>
+      <div class="err-msg" id="e2-err" style="display:none"></div>
+    </div>
+
+    <!-- E3: format focus -->
+    <div class="exp">
+      <div class="exp-title">03 · format focus</div>
+      <div class="exp-readout" id="e3-ro">all</div>
+      <div class="exp-sub">click to isolate one format</div>
+      <div class="fmt-chips" id="chips"></div>
+    </div>
+  </div>
+
+  <!-- REACTIVE CHART PANELS -->
+  <div class="rxg" style="border-top:none;border-radius:0 0 8px 8px;margin-top:2px">
+
+    <!-- R1: collision bars (E1 + E3) -->
+    <div class="cp">
+      <div class="cp-title">collision risk at current N <span class="live-tag">live</span></div>
+      <div id="rx-bars"></div>
+    </div>
+
+    <!-- R2: headroom (E1 + E3) -->
+    <div class="cp">
+      <div class="cp-title">headroom to 1% threshold <span class="live-tag">live</span></div>
+      <div id="rx-head"></div>
+    </div>
+
+    <!-- R3: IDs to reach target p (E2 + E3) -->
+    <div class="cp">
+      <div class="cp-title">IDs to reach target probability <span class="live-tag">live</span></div>
+      <div id="rx-reach"></div>
+    </div>
+
+    <!-- R4: spotlight (E1 + E2 + E3) -->
+    <div class="cp">
+      <div class="cp-title">format spotlight <span class="live-tag">live</span></div>
+      <div id="rx-focus"></div>
+    </div>
+
+    <!-- R5: curves with cursor (E1 + E3) -->
+    <div class="cp full">
+      <div class="cp-title">collision probability curves — vertical line = current N <span class="live-tag">live</span></div>
+      <div class="cbox" style="height:240px"><canvas id="ch-curves" role="img" aria-label="Collision probability curves with live N cursor"></canvas></div>
+      <div class="leg" id="leg-curves"></div>
+    </div>
+
+    <!-- R6: radar (E1) -->
+    <div class="cp">
+      <div class="cp-title">relative risk radar <span class="live-tag">live</span></div>
+      <div class="cbox" style="height:220px"><canvas id="ch-radar" role="img" aria-label="Radar chart of collision risk across formats"></canvas></div>
+    </div>
+
+    <!-- R7: donut (E1 + E3) -->
+    <div class="cp">
+      <div class="cp-title">probability share <span class="live-tag">live</span></div>
+      <div class="cbox" style="height:180px"><canvas id="ch-donut" role="img" aria-label="Donut chart of collision probability share"></canvas></div>
+      <div class="leg" id="leg-donut"></div>
+    </div>
+
+    <!-- R8: remaining capacity line (E1 + E3) -->
+    <div class="cp full">
+      <div class="cp-title">remaining capacity — % of 1%-threshold N still unused <span class="live-tag">live</span></div>
+      <div class="cbox" style="height:180px"><canvas id="ch-cap" role="img" aria-label="Remaining capacity bar chart"></canvas></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- STATIC CHARTS -->
+<div class="sec">
+  <div class="sec-label">Reference charts</div>
+  <div class="sg">
+    <div class="cp full">
+      <div class="cp-title">heatmap — collision probability across formats × ID count</div>
+      <div class="hm-wrap"><table class="hm-table" id="hm-table"></table></div>
+    </div>
+    <div class="cp">
+      <div class="cp-title">random bits per format</div>
+      <div class="cbox" style="height:210px"><canvas id="ch-bits" role="img" aria-label="Bits per format"></canvas></div>
+    </div>
+    <div class="cp">
+      <div class="cp-title">1% vs 50% collision threshold</div>
+      <div class="cbox" style="height:210px"><canvas id="ch-thresh" role="img" aria-label="Threshold comparison"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="sec">
+  <div class="sec-label">Reference table</div>
+  <div class="table-wrap">
+    <table class="ref">
+      <thead><tr><th>Format</th><th>Random bits</th><th>Keyspace</th><th>1% collision at</th><th>50% collision at</th><th>Rating</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<footer>
+  <span>CLID collision probability · birthday paradox model</span>
+  <span>p ≈ n² / (2N) for small p · N = keyspace size</span>
+</footer>
+</div>
+
+<script>
+/* ── DATA ── */
+const F=[
+  {name:'CLID-1/2',      bits:24,ts:false},
+  {name:'CLID-3',        bits:21,ts:false},
+  {name:'CLID-4',        bits:20,ts:false},
+  {name:'CLID-5',        bits:16,ts:false},
+  {name:'CLID-1-TS/2-TS',bits:20,ts:true},
+  {name:'CLID-3-TS',     bits:15,ts:true},
+  {name:'CLID-4-TS',     bits:14,ts:true},
+  {name:'CLID-5-TS',     bits:10,ts:true},
+];
+const C=['#3B6D11','#185FA5','#534AB7','#854F0B','#0F6E56','#993356','#A32D2D','#B8860B'];
+
+/* ── MATH ── */
+const L62=Math.log10(62);
+const ksL=b=>b*L62;
+const safe1=b=>0.5*(Math.log10(0.02)+b*L62);
+const safe50=b=>0.5*(Math.log10(2*Math.log(2))+b*L62);
+function collP(bits,log10n){const l=2*log10n-ksL(bits)-Math.log10(2);if(l>0)return 1;if(l<-15)return 0;return Math.pow(10,l)}
+function nForP(bits,pct){return 0.5*(Math.log10(-2*Math.log(1-pct/100))+ksL(bits))}
+function fmtSci(v){const e=Math.floor(v),m=Math.pow(10,v-e);return m.toFixed(1)+' × 10^'+e}
+function pillFor(b){if(b>=20)return '<span class="pill p-green">excellent</span>';if(b>=15)return '<span class="pill p-amber">good</span>';return '<span class="pill p-red">limited</span>'}
+
+/* ── STATE ── */
+let S={n:12,p:1,focus:null};
+
+/* ── STATIC CARDS ── */
+F.slice(0,4).forEach(f=>{
+  const d=document.createElement('div');d.className='card';
+  d.innerHTML=`<div class="card-label">${f.name}</div><div class="card-val">${fmtSci(safe1(f.bits))}</div><div class="card-sub">before 1% collision</div><span class="card-tag">${f.bits} bits</span>`;
+  document.getElementById('cards').appendChild(d);
+});
+
+/* ── STATIC TABLE ── */
+F.forEach(f=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td class="name">${f.name}${f.ts?'<span class="ts-tag">timestamped</span>':''}</td><td class="mono">${f.bits}</td><td class="mono">~10^${Math.floor(ksL(f.bits))}</td><td class="mono">${fmtSci(safe1(f.bits))}</td><td class="mono">${fmtSci(safe50(f.bits))}</td><td>${pillFor(f.bits)}</td>`;
+  document.getElementById('tbody').appendChild(tr);
+});
+
+/* ── FORMAT CHIPS ── */
+const chipsEl=document.getElementById('chips');
+function mkChip(label,idx){
+  const b=document.createElement('button');b.className='chip'+(idx===null?' active':'');
+  b.textContent=label;b.onclick=()=>setFocus(idx);return b;
+}
+chipsEl.appendChild(mkChip('all',null));
+F.forEach((f,i)=>chipsEl.appendChild(mkChip(f.name,i)));
+
+function setFocus(i){
+  S.focus=i;
+  document.querySelectorAll('.chip').forEach((c,ci)=>c.classList.toggle('active',ci===(i===null?0:i+1)));
+  document.getElementById('e3-ro').textContent=i===null?'all':F[i].name;
+  updateAll();
+}
+
+/* ── EXPLORER 1 ── */
+const e1sl=document.getElementById('e1-sl'),e1ro=document.getElementById('e1-ro');
+function setN(v){S.n=Math.max(1,Math.min(25,v));e1sl.value=S.n;e1ro.textContent='10^'+S.n.toFixed(2);updateAll()}
+e1sl.addEventListener('input',()=>setN(parseFloat(e1sl.value)));
+function applyE1(){
+  const ci=document.getElementById('e1-ci'),er=document.getElementById('e1-err');
+  ci.classList.remove('err');er.style.display='none';
+  let v;try{v=Number(Function('"use strict";return('+ci.value.trim()+')')())}catch(e){v=NaN}
+  if(!isFinite(v)||v<=0){er.textContent='enter positive number e.g. 1e9';er.style.display='';ci.classList.add('err');return}
+  setN(Math.log10(v));
+}
+document.getElementById('e1-ci').addEventListener('keydown',e=>{if(e.key==='Enter')applyE1()});
+
+/* ── EXPLORER 2 ── */
+const e2sl=document.getElementById('e2-sl'),e2ro=document.getElementById('e2-ro');
+function setP(v){S.p=Math.max(0.01,Math.min(99.9,v));e2sl.value=S.p;e2ro.textContent=S.p.toFixed(2)+'%';updateAll()}
+e2sl.addEventListener('input',()=>setP(parseFloat(e2sl.value)));
+function applyE2(){
+  const ci=document.getElementById('e2-ci'),er=document.getElementById('e2-err');
+  ci.classList.remove('err');er.style.display='none';
+  const v=parseFloat(ci.value.trim());
+  if(!isFinite(v)||v<=0||v>=100){er.textContent='enter % between 0.01 and 99.9';er.style.display='';ci.classList.add('err');return}
+  setP(v);
+}
+document.getElementById('e2-ci').addEventListener('keydown',e=>{if(e.key==='Enter')applyE2()});
+
+/* ── CHART HELPERS ── */
+const isDark=matchMedia('(prefers-color-scheme:dark)').matches;
+const gc=isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.05)';
+const tc=isDark?'#5a5650':'#8a857c';
+const mf={family:'IBM Plex Mono',size:10};
+const sc={ticks:{color:tc,font:mf},grid:{color:gc},border:{color:'transparent'}};
+
+function activeFormats(){return S.focus===null?F.map((_,i)=>i):[S.focus]}
+
+/* ── R1: collision bars ── */
+function renderBars(){
+  const el=document.getElementById('rx-bars');el.innerHTML='';
+  activeFormats().forEach(i=>{
+    const f=F[i];const p=collP(f.bits,S.n);
+    const pct=Math.min(p*100,100);
+    let s;if(p>=.9999)s='>99.99%';else if(p<.000001)s='<0.0001%';else s=(p*100).toFixed(4)+'%';
+    const cls=p>.1?'bar-pct danger':p>.01?'bar-pct warn':'bar-pct';
+    const row=document.createElement('div');row.className='bar-row';
+    row.innerHTML=`<div class="bar-name">${f.name}</div><div class="bar-track"><div class="bar-fill" style="width:${pct.toFixed(3)}%;background:${C[i]}"></div></div><div class="${cls}">${s}</div>`;
+    el.appendChild(row);
+  });
+}
+
+/* ── R2: headroom ── */
+function renderHead(){
+  const el=document.getElementById('rx-head');el.innerHTML='';
+  const maxH=safe1(F[0].bits)-1;
+  activeFormats().forEach(i=>{
+    const f=F[i];const h=safe1(f.bits)-S.n;
+    const frac=Math.max(0,Math.min(1,h/maxH));
+    const col=h>2?C[i]:h>0?'#854F0B':'#A32D2D';
+    const lbl=h>0?'+10^'+h.toFixed(1)+' orders':'exceeded';
+    const row=document.createElement('div');row.className='hd-row';
+    row.innerHTML=`<div class="hd-name">${f.name}</div><div class="hd-track"><div class="hd-fill" style="width:${(frac*100).toFixed(1)}%;background:${col}"></div></div><div class="hd-val">${lbl}</div>`;
+    el.appendChild(row);
+  });
+}
+
+/* ── R3: reach target p ── */
+function renderReach(){
+  const el=document.getElementById('rx-reach');el.innerHTML='';
+  activeFormats().forEach(i=>{
+    const f=F[i];const n=nForP(f.bits,S.p);
+    const row=document.createElement('div');row.className='rc-row';
+    row.innerHTML=`<div class="rc-name">${f.name}</div><div class="rc-val">${fmtSci(n)}</div>`;
+    el.appendChild(row);
+  });
+}
+
+/* ── R4: spotlight ── */
+function renderFocus(){
+  const el=document.getElementById('rx-focus');el.innerHTML='';
+  if(S.focus===null){
+    el.innerHTML='<div style="font-family:var(--mono);font-size:11px;color:var(--t3);padding:6px 0">Select a format in explorer 03 to drill down.</div>';return;
+  }
+  const f=F[S.focus];const i=S.focus;
+  const p=collP(f.bits,S.n);const h=safe1(f.bits)-S.n;const nt=nForP(f.bits,S.p);
+  el.innerHTML=`<div class="stat-grid">
+    <div class="sb"><div class="sb-label">collision @ current N</div><div class="sb-val" style="color:${p>.1?'var(--red)':p>.01?'var(--amber)':C[i]}">${p>=.9999?'>99.99':p<.000001?'<0.0001':(p*100).toFixed(4)}%</div></div>
+    <div class="sb"><div class="sb-label">headroom to 1%</div><div class="sb-val">${h>0?'+10^'+h.toFixed(2):'exceeded'}</div></div>
+    <div class="sb"><div class="sb-label">1% threshold</div><div class="sb-val" style="font-size:11px">${fmtSci(safe1(f.bits))}</div></div>
+    <div class="sb"><div class="sb-label">50% threshold</div><div class="sb-val" style="font-size:11px">${fmtSci(safe50(f.bits))}</div></div>
+  </div>
+  <div style="font-family:var(--mono);font-size:10px;color:var(--t3);margin-top:4px">IDs to hit ${S.p.toFixed(2)}%: <span style="color:var(--t);font-weight:500">${fmtSci(nt)}</span></div>
+  <div style="font-family:var(--mono);font-size:10px;color:var(--t3);margin-top:4px">${f.bits}b · ~10^${Math.floor(ksL(f.bits))} keyspace · ${f.ts?'timestamped':'non-timestamped'} · ${pillFor(f.bits)}</div>`;
+}
+
+/* ── R5: curves + cursor ── */
+let curvesChart=null;
+const cursorPlugin={id:'cur',afterDraw(ch){
+  const x=ch.scales.x.getPixelForValue(S.n);
+  const{top,bottom}=ch.chartArea;const ctx=ch.ctx;
+  ctx.save();ctx.strokeStyle=isDark?'rgba(255,255,255,.3)':'rgba(0,0,0,.25)';ctx.lineWidth=1;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);ctx.stroke();ctx.restore();
+}};
+
+function initCurves(){
+  const pts=[];for(let x=1;x<=25;x+=0.5)pts.push(x);
+  curvesChart=new Chart(document.getElementById('ch-curves'),{
+    type:'line',
+    data:{datasets:F.map((f,i)=>({
+      label:f.name,
+      data:pts.map(x=>({x,y:+(collP(f.bits,x)*100).toFixed(6)})),
+      borderColor:C[i],backgroundColor:'transparent',
+      borderWidth:1.5,pointRadius:0,tension:0.4,borderDash:f.ts?[4,3]:[]
+    }))},
+    plugins:[cursorPlugin],
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:0},
+      scales:{
+        x:{...sc,type:'linear',min:1,max:25,title:{display:true,text:'log₁₀(IDs generated)',color:tc,font:mf},ticks:{...sc.ticks,callback:v=>'10^'+v}},
+        y:{...sc,min:0,max:100,title:{display:true,text:'collision probability (%)',color:tc,font:mf},ticks:{...sc.ticks,callback:v=>v+'%'}}
+      },
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:items=>'10^'+parseFloat(items[0].parsed.x).toFixed(2)+' IDs',label:i=>i.dataset.label+': '+i.parsed.y.toFixed(4)+'%'}}}
+    }
+  });
+  const leg=document.getElementById('leg-curves');
+  F.forEach((f,i)=>{
+    const d=document.createElement('div');d.className='li';
+    d.innerHTML=f.ts?`<div class="ldash" style="border-color:${C[i]}"></div>${f.name}`:`<div class="ld" style="background:${C[i]}"></div>${f.name}`;
+    leg.appendChild(d);
+  });
+}
+function updateCurves(){
+  if(!curvesChart)return;
+  curvesChart.data.datasets.forEach((ds,i)=>{ds.hidden=S.focus!==null&&i!==S.focus});
+  curvesChart.update('none');
+}
+
+/* ── R6: radar ── */
+let radarChart=null;
+function initRadar(){
+  radarChart=new Chart(document.getElementById('ch-radar'),{
+    type:'radar',
+    data:{labels:F.map(f=>f.name),datasets:[{
+      label:'collision %',data:F.map(f=>+(collP(f.bits,S.n)*100).toFixed(4)),
+      borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,.12)',
+      borderWidth:1.5,pointRadius:3,pointBackgroundColor:'#185FA5'
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{r:{ticks:{color:tc,font:mf,backdropColor:'transparent'},grid:{color:gc},pointLabels:{color:tc,font:{family:'IBM Plex Mono',size:9}},min:0}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>i.parsed.r.toFixed(4)+'%'}}}
+    }
+  });
+}
+function updateRadar(){
+  if(!radarChart)return;
+  radarChart.data.datasets[0].data=F.map(f=>+(collP(f.bits,S.n)*100).toFixed(6));
+  radarChart.update('active');
+}
+
+/* ── R7: donut ── */
+let donutChart=null;
+function initDonut(){
+  const ai=activeFormats();
+  donutChart=new Chart(document.getElementById('ch-donut'),{
+    type:'doughnut',
+    data:{labels:ai.map(i=>F[i].name),datasets:[{
+      data:ai.map(i=>Math.max(1e-9,collP(F[i].bits,S.n)*100)),
+      backgroundColor:ai.map(i=>C[i]),borderWidth:0
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>i.label+': '+i.parsed.toFixed(4)+'%'}}}
+    }
+  });
+  buildDonutLeg(ai);
+}
+function buildDonutLeg(ai){
+  const leg=document.getElementById('leg-donut');leg.innerHTML='';
+  ai.forEach(i=>{const d=document.createElement('div');d.className='li';d.innerHTML=`<div class="ld" style="background:${C[i]}"></div>${F[i].name}`;leg.appendChild(d);});
+}
+function updateDonut(){
+  if(!donutChart)return;
+  const ai=activeFormats();
+  donutChart.data.labels=ai.map(i=>F[i].name);
+  donutChart.data.datasets[0].data=ai.map(i=>Math.max(1e-9,collP(F[i].bits,S.n)*100));
+  donutChart.data.datasets[0].backgroundColor=ai.map(i=>C[i]);
+  donutChart.update('active');buildDonutLeg(ai);
+}
+
+/* ── R8: remaining capacity ── */
+let capChart=null;
+function initCap(){
+  const ai=activeFormats();
+  capChart=new Chart(document.getElementById('ch-cap'),{
+    type:'bar',
+    data:{
+      labels:ai.map(i=>F[i].name),
+      datasets:[{
+        label:'remaining capacity (%)',
+        data:ai.map(i=>Math.max(0,Math.min(100,(1-collP(F[i].bits,S.n))*100))),
+        backgroundColor:ai.map(i=>C[i]+'bb'),
+        borderColor:ai.map(i=>C[i]),
+        borderWidth:1,borderRadius:3,borderSkipped:false
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{
+        x:{...sc,ticks:{...sc.ticks,font:{family:'IBM Plex Mono',size:9},maxRotation:30}},
+        y:{...sc,min:0,max:100,title:{display:true,text:'remaining capacity (%)',color:tc,font:mf},ticks:{...sc.ticks,callback:v=>v+'%'}}
+      },
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>(i.parsed.y).toFixed(2)+'% capacity remaining'}}}
+    }
+  });
+}
+function updateCap(){
+  if(!capChart)return;
+  const ai=activeFormats();
+  capChart.data.labels=ai.map(i=>F[i].name);
+  capChart.data.datasets[0].data=ai.map(i=>Math.max(0,Math.min(100,(1-collP(F[i].bits,S.n))*100)));
+  capChart.data.datasets[0].backgroundColor=ai.map(i=>C[i]+'bb');
+  capChart.data.datasets[0].borderColor=ai.map(i=>C[i]);
+  capChart.update('active');
+}
+
+/* ── STATIC: heatmap ── */
+(function(){
+  const cols=[4,6,8,10,12,14,16,18,20,22,24];
+  const tbl=document.getElementById('hm-table');
+  const thead=tbl.createTHead();const hr=thead.insertRow();
+  const th0=document.createElement('th');th0.className='rh';hr.appendChild(th0);
+  cols.forEach(c=>{const th=document.createElement('th');th.textContent='10^'+c;hr.appendChild(th)});
+  const tb=tbl.createTBody();const tt=document.getElementById('tt');
+  F.forEach(f=>{
+    const tr=tb.insertRow();const rh=document.createElement('th');rh.className='rh';rh.textContent=f.name;tr.appendChild(rh);
+    cols.forEach(c=>{
+      const p=collP(f.bits,c);const td=tr.insertCell();
+      const r=Math.round(p*255),g=Math.round((1-p)*180);
+      td.style.background=`rgb(${Math.min(255,r+30)},${g},${Math.max(0,80-r)})`;
+      td.style.color=p>.5?'rgba(255,255,255,.9)':'rgba(0,0,0,.45)';
+      td.textContent=p>=.9999?'>99%':p<.0001?'<.01%':(p*100).toFixed(1)+'%';
+      const tip=`${f.name} @ 10^${c}: ${p>=.9999?'>99.99':(p*100).toFixed(4)}%`;
+      td.addEventListener('mousemove',e=>{tt.textContent=tip;tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY-32)+'px';tt.classList.add('show')});
+      td.addEventListener('mouseleave',()=>tt.classList.remove('show'));
+    });
+  });
+})();
+
+/* ── STATIC: bits bar ── */
+(function(){
+  new Chart(document.getElementById('ch-bits'),{
+    type:'bar',
+    data:{labels:F.map(f=>f.name),datasets:[{data:F.map(f=>f.bits),backgroundColor:C,borderRadius:3,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      scales:{x:{...sc,title:{display:true,text:'random bits',color:tc,font:mf}},y:{...sc,ticks:{...sc.ticks,font:{family:'IBM Plex Mono',size:9}}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>i.parsed.x+' bits'}}}}
+  });
+})();
+
+/* ── STATIC: threshold grouped bar ── */
+(function(){
+  new Chart(document.getElementById('ch-thresh'),{
+    type:'bar',
+    data:{labels:F.map(f=>f.name),datasets:[
+      {label:'1% collision',data:F.map(f=>+safe1(f.bits).toFixed(2)),backgroundColor:C,borderRadius:3,borderSkipped:false},
+      {label:'50% collision',data:F.map(f=>+safe50(f.bits).toFixed(2)),backgroundColor:C.map(c=>c+'55'),borderColor:C,borderWidth:1,borderRadius:3,borderSkipped:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{
+        x:{...sc,ticks:{...sc.ticks,font:{family:'IBM Plex Mono',size:9},maxRotation:30}},
+        y:{...sc,title:{display:true,text:'log₁₀(IDs)',color:tc,font:mf},ticks:{...sc.ticks,callback:v=>'10^'+v}}
+      },
+      plugins:{legend:{display:true,position:'top',labels:{color:tc,font:mf,boxWidth:10,boxHeight:10}},
+        tooltip:{callbacks:{label:i=>i.dataset.label+': 10^'+i.parsed.y.toFixed(2)}}}
+    }
+  });
+})();
+
+/* ── MASTER UPDATE ── */
+function updateAll(){
+  renderBars();renderHead();renderReach();renderFocus();
+  updateCurves();updateRadar();updateDonut();updateCap();
+}
+
+/* ── INIT ── */
+initCurves();initRadar();initDonut();initCap();
+setN(12);setP(1);
+</script>
+</body>
+</html>
